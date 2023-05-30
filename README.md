@@ -25,3 +25,11 @@ Run your server program on the server by executing the following command:
 In Terminal 2 (client terminal):
 Run your client program on the client by executing the following command:
 ./client
+
+
+## Members:
+* Anila Luta
+* Anjeza Sfishta
+* Rinesa Zuzaku
+* Tringa Baftiu
+
