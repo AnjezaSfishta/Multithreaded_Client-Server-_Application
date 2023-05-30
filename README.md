@@ -10,6 +10,7 @@ Make sure you have already installed gcc
 
 # Compiling
 Compile your C programs by running:
+
 gcc -o server server.c 
 
 gcc -o client client.c
