@@ -24,9 +24,11 @@ starting a client
 # Compiling
 Compile your C programs by running:
 gcc -o server server.c 
+
 gcc -o client client.c
 
 Running
+
 Run your server program on the server by running:
 
 ./server 
