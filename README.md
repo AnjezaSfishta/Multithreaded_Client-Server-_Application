@@ -1,24 +1,11 @@
 # Installation
 clone this repository:
 
-[(https://github.com/RinesaZuzaku/Multithreaded_Client-Server-_Application.git)]
+https://github.com/RinesaZuzaku/Multithreaded_Client-Server-_Application.git
 
 
 # Build Instruction
 Make sure you have already installed gcc
-
-
-
-
-
-# Execution Instruction
-You got output executable file
-
-staring the server
-
-
-
-starting a client
 
 
 # Compiling
@@ -27,7 +14,7 @@ gcc -o server server.c
 
 gcc -o client client.c
 
-Running
+# Running
 
 Run your server program on the server by running:
 
