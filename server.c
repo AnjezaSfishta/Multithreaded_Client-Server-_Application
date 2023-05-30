@@ -215,3 +215,45 @@ void* clientThreadHandler(void* arg) {
 
 	pthread_exit(NULL);
 }
+// Function declaration
+int isClientAuthorized(int clientSocket, const char* message);
+
+void processClientMessage(int clientSocket, const char* message) {
+	// Perform access control checks to validate the client's access rights
+	// Implement your access control logic here
+	// Example: Check if the client is authorized to access the message
+
+	if (!isClientAuthorized(clientSocket, message)) {
+    	// If the client is not authorized, send an error message
+    	const char* errorMsg = "Access denied. You are not authorized to access this message.";
+    	send(clientSocket, errorMsg, strlen(errorMsg), 0);
+    	printf("[INFO] Access denied for client: %d\n", clientSocket);
+    	return;
+	}
+
+	// If the client has access, process the message and generate a response
+	char response[RESPONSE_SIZE];
+	snprintf(response, RESPONSE_SIZE, "Hello from server! You sent: %s", message);
+
+	// Send the response to the client
+	send(clientSocket, response, strlen(response), 0);
+	printf("[INFO] Message processed: %s\n", message);
+}
+
+int isClientAuthorized(int clientSocket, const char* message) {
+	struct sockaddr_in clientAddress;
+	socklen_t addressLength = sizeof(clientAddress);
+	getpeername(clientSocket, (struct sockaddr*)&clientAddress, &addressLength);
+
+	// Get the client's IP address
+	char clientIP[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(clientAddress.sin_addr), clientIP, INET_ADDRSTRLEN);
+
+	// Implement your access control logic here
+	// Example: Allow access only to clients with a specific IP address
+	if (strcmp(clientIP, "127.0.0.1") == 0) {
+    	return 1; // Client is authorized
+	}
+
+	return 0; // Client is not authorized
+}
