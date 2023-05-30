@@ -257,3 +257,65 @@ int isClientAuthorized(int clientSocket, const char* message) {
 
 	return 0; // Client is not authorized
 }
+void initSharedMemory() {
+	key_t key = ftok(".", 'S');
+	shmId = shmget(key, BUFFER_SIZE, IPC_CREAT | 0666);
+	if (shmId == -1) {
+    	perror("[ERROR] FAILED TO CREATE SHARED MEMORY");
+    	exit(1);
+	}
+
+	sharedMemory = (char*)shmat(shmId, NULL, 0);
+	if (sharedMemory == (char*)-1) {
+    	perror("[ERROR] FAILED TO ATTACH SHARED MEMORY");
+    	exit(1);
+	}
+
+	memset(sharedMemory, 0, BUFFER_SIZE);
+}
+
+void destroySharedMemory() {
+	shmdt(sharedMemory);
+	shmctl(shmId, IPC_RMID, NULL);
+}
+
+void initSemaphore() {
+	key_t key = ftok(".", 'E');
+	semId = semget(key, 1, IPC_CREAT | 0666);
+	if (semId == -1) {
+    	perror("[ERROR] FAILED TO CREATE SEMAPHORE");
+    	exit(1);
+	}
+
+	// Set the initial value of the semaphore to 1
+	if (semctl(semId, 0, SETVAL, 1) == -1) {
+    	perror("[ERROR] FAILED TO SET SEMAPHORE VALUE");
+    	exit(1);
+	}
+}
+
+void destroySemaphore() {
+	semctl(semId, 0, IPC_RMID);
+}
+
+void P() {
+	struct sembuf operation;
+	operation.sem_num = 0;
+	operation.sem_op = -1;
+	operation.sem_flg = SEM_UNDO;
+	if (semop(semId, &operation, 1) == -1) {
+    	perror("[ERROR] SEMAPHORE P OPERATION FAILED");
+    	exit(1);
+	}
+}
+
+void V() {
+	struct sembuf operation;
+	operation.sem_num = 0;
+	operation.sem_op = 1;
+	operation.sem_flg = SEM_UNDO;
+	if (semop(semId, &operation, 1) == -1) {
+    	perror("[ERROR] SEMAPHORE V OPERATION FAILED");
+    	exit(1);
+	}
+}
