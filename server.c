@@ -146,3 +146,72 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
+void* clientThreadHandler(void* arg) {
+	struct ClientInfo* clientInfo = (struct ClientInfo*)arg;
+	int clientSocket = clientInfo->socket;
+	int clientQueueId = clientInfo->messageQueueId;
+
+	char buffer[BUFFER_SIZE] = {0};
+	ssize_t bytesRead;
+
+	struct sockaddr_in clientAddress;
+	socklen_t clientAddressLength = sizeof(clientAddress);
+	getpeername(clientSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
+	char clientIP[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(clientAddress.sin_addr), clientIP, INET_ADDRSTRLEN);
+	int clientPort = ntohs(clientAddress.sin_port);
+
+	printf("[INFO] NEW CONNECTION ACCEPTED FROM %s:%d\n", clientIP, clientPort);
+
+	while (1) {
+    	// Receive message from client
+    	bytesRead = recv(clientSocket, buffer, BUFFER_SIZE, 0);
+    	if (bytesRead <= 0) {
+        	break; // Client disconnected
+    	}
+
+    	// Send the message to the client's message queue
+    	struct Message message;
+    	message.messageType = clientQueueId;
+    	strncpy(message.messageData, buffer, MAX_MESSAGE_SIZE);
+    	if (msgsnd(clientQueueId, &message, sizeof(struct Message) - sizeof(long), 0) == -1) {
+        	perror("[WARNING] FAILED TO SEND MESSAGE");
+        	break;
+    	}
+
+    	// Wait for the response from the client's message queue
+    	struct Message response;
+    	if (msgrcv(clientQueueId, &response, sizeof(struct Message) - sizeof(long), 0, 0) == -1) {
+        	perror("[WARNING] FAILED TO RECEIVE MESSAGE");
+        	break;
+    	}
+
+    	// Process the received message
+    	processClientMessage(clientSocket, response.messageData);
+
+    	// Clear the buffer
+    	memset(buffer, 0, BUFFER_SIZE);
+	}
+
+	// Remove the client from the clients array
+	pthread_mutex_lock(&clientsMutex);
+	for (int i = 0; i < clientCount; i++) {
+    	if (clients[i].socket == clientSocket) {
+        	for (int j = i; j < clientCount - 1; j++) {
+            	clients[j] = clients[j + 1];
+        	}
+        	clientCount--;
+        	break;
+    	}
+	}
+	pthread_mutex_unlock(&clientsMutex);
+
+	close(clientSocket);
+
+	printf("[INFO] CONNECTION CLOSED: %s:%d\n", clientIP, clientPort);
+	printf("[INFO] THREAD TERMINATED\n");
+
+	free(clientInfo);
+
+	pthread_exit(NULL);
+}
